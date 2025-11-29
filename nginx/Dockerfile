@@ -1,4 +1,4 @@
-FROM tobi312/rpi-nginx:alpine
+FROM polinux/pi-nginx:latest
 
 USER root
 
