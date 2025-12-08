@@ -1,4 +1,4 @@
-FROM polinux/pi-nginx:latest
+FROM nginx:alpine
 
 USER root
 

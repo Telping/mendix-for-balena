@@ -3,20 +3,20 @@
 #
 # Copied from original Dockerfile
 # Author: Mendix Digital Ecosystems, digitalecosystems@mendix.com
-# Version: 1.5
-FROM balenalib/%%BALENA_MACHINE_NAME%%-ubuntu-openjdk:8-latest-run
-#This version does a full build originating from the Ubuntu Docker images
+# Version: 2.0 - Updated for Mendix 10.x with Java 21
+FROM eclipse-temurin:21-jdk-jammy
+#This version uses Eclipse Temurin JDK 21 for Mendix 10.x compatibility
 LABEL Author="J.W. Lagendijk & C.B.L. Waal"
 LABEL maintainer="jelte.lagendijk@mendix.com"
 
 # When doing a full build: install dependencies & remove package lists
 RUN apt-get -q -y update && \
  DEBIAN_FRONTEND=noninteractive apt-get upgrade -q -y && \
- DEBIAN_FRONTEND=noninteractive apt-get install -q -y python3 wget curl libgdiplus libpq5 locales python3-distutils git i2c-tools && \
+ DEBIAN_FRONTEND=noninteractive apt-get install -q -y python3 python3-pip wget curl libgdiplus libpq5 locales python3-distutils git i2c-tools && \
  rm -rf /var/lib/apt/lists/*
 
 # Set the locale
-RUN locale-gen en_US.UTF-8
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 ENV LANG en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
 
@@ -24,10 +24,27 @@ ENV LC_ALL en_US.UTF-8
 ARG BUILD_PATH=project
 ARG DD_API_KEY
 
-# Checkout CF Build-pack here
+# Checkout CF Build-pack here (using archive-pi branch for Raspberry Pi compatibility)
 RUN mkdir -p buildpack/.local && \
-   (wget -qO- https://github.com/MXClyde/cf-mendix-buildpack/tree/archive-pi \
-   | tar xvz -C buildpack --strip-components 1)
+   (wget -qO- https://github.com/MXClyde/cf-mendix-buildpack/archive/refs/heads/archive-pi.tar.gz \
+   | tar xvz -C buildpack --strip-components 1) && \
+   chmod +x /buildpack/bin/*
+
+# Update bundled Python libraries for Python 3.10+ compatibility
+# Install PyYAML 6.x and patch the buildpack to use yaml.safe_load instead of yaml.load
+RUN pip3 install --target=/buildpack/lib --upgrade urllib3 requests certifi charset-normalizer idna PyYAML
+
+# Patch buildpack Python files to use yaml.safe_load instead of yaml.load (for PyYAML 6.x compatibility)
+RUN find /buildpack -name "*.py" -exec sed -i 's/yaml\.load(/yaml.safe_load(/g' {} \;
+
+# Patch buildpackutil.py to support Java 21 for Mendix 10.x
+# The old buildpack only supports Java 7/8, but Mendix 10.x requires Java 21
+RUN sed -i 's/versions = {"7": "7u80", "8u51": "8u51", "8": "8"}/versions = {"7": "7u80", "8u51": "8u51", "8": "8", "11": "11", "17": "17", "21": "21"}/' /buildpack/lib/buildpackutil.py && \
+    sed -i 's/if mx_version >= 6.6:/if mx_version >= 10.0:\n        default = "21"\n    elif mx_version >= 6.6:/' /buildpack/lib/buildpackutil.py
+
+# Set JAVA_HOME and JAVA_VERSION for the buildpack to find Java 21
+ENV JAVA_HOME=/opt/java/openjdk
+ENV JAVA_VERSION=21
 
 # Copy python scripts which execute the buildpack (exporting the VCAP variables)
 COPY scripts/compilation /buildpack
@@ -35,11 +52,14 @@ COPY scripts/compilation /buildpack
 # Add the buildpack modules
 ENV PYTHONPATH "/buildpack/lib/"
 
-# Add Pi4J to control Raspberry Pi
-COPY utils/wiringpi-2.46-1.deb /tmp
+# Add WiringPi for Raspberry Pi GPIO support (ARM64 compatible)
+RUN wget -q -O /tmp/wiringpi.deb https://github.com/WiringPi/WiringPi/releases/download/3.16/wiringpi_3.16_arm64.deb && \
+    dpkg -i /tmp/wiringpi.deb && \
+    rm -f /tmp/wiringpi.deb
+
+# Add Pi4J to control Raspberry Pi (optional - skip if not using GPIO from Java)
 COPY utils/pi4j-1.2-SNAPSHOT.deb /tmp
-RUN dpkg -i /tmp/wiringpi-2.46-1.deb
-RUN dpkg -i /tmp/pi4j-1.2-SNAPSHOT.deb
+RUN dpkg -i /tmp/pi4j-1.2-SNAPSHOT.deb || echo "Pi4J installation skipped - may not be ARM64 compatible"
 RUN rm -rf /tmp/*.deb
 
 # Create the build destination

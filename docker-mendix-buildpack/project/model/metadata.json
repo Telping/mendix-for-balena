@@ -1,43 +1,229 @@
 {
-  "DataBrokerConfiguration": {
-    "publishedServices": []
-  },
-  "RuntimeVersion": "9.24.18.31862",
-  "ProjectID": "136f554b-d864-4a9f-8fc5-383f44435d4f",
-  "ProjectName": "DockerDeploy-App",
-  "ModelVersion": "unversioned",
+  "RuntimeVersion": "10.24.8.80126",
+  "ProjectID": "16bcd522-9822-42cd-bf9d-372f99bd8bd4",
+  "ProjectName": "ThingyAgent",
+  "ModelVersion": "1.0.0.fc75b23",
   "Description": "",
   "AdminUser": "MxAdmin",
+  "AdminRole": "8dd52bfa-6d7e-453b-b506-303c0a3d9567",
+  "JavaVersion": 21,
   "Roles": {
     "8dd52bfa-6d7e-453b-b506-303c0a3d9567": {
       "Name": "Administrator",
       "ManageableRoles": [
         "8dd52bfa-6d7e-453b-b506-303c0a3d9567",
-        "53f5d6fa-6da9-4a71-b011-454ec052cce8"
+        "53f5d6fa-6da9-4a71-b011-454ec052cce8",
+        "ec9a53ba-776a-4681-9cac-78d83c4ee25e"
       ]
     },
     "53f5d6fa-6da9-4a71-b011-454ec052cce8": {
       "Name": "User"
+    },
+    "ec9a53ba-776a-4681-9cac-78d83c4ee25e": {
+      "Name": "HelpdeskUser"
     }
   },
-  "AdminRole": "8dd52bfa-6d7e-453b-b506-303c0a3d9567",
   "Constants": [
     {
-      "Name": "NanoflowCommons.Nanoflow_Commons_Version",
+      "Name": "MyFirstSupportAgent.ChunkSizeCharacters",
+      "Type": "Integer",
+      "Description": "",
+      "DefaultValue": "600"
+    },
+    {
+      "Name": "MyFirstSupportAgent.KnowledgeBaseName",
       "Type": "String",
       "Description": "",
-      "DefaultValue": "2.1.0"
+      "DefaultValue": "agentbuilderstarter"
+    },
+    {
+      "Name": "MyFirstSupportAgent.LogNode",
+      "Type": "String",
+      "Description": "",
+      "DefaultValue": "MyFirstSupportAssistant"
+    },
+    {
+      "Name": "MyFirstSupportAgent.NumberOfChunksRetrieved",
+      "Type": "Integer",
+      "Description": "Determines the maximum number of results when retrieving nearest neighbors from the knowledge base. This is used for static data retrieval.",
+      "DefaultValue": "3"
+    },
+    {
+      "Name": "MyFirstSupportAgent.NumberOfTicketsRetrieved",
+      "Type": "Integer",
+      "Description": "Determines the maximum number of results when retrieving nearest neighbors from the knowledge base. This is used for similar tickets retrieval.",
+      "DefaultValue": "3"
+    },
+    {
+      "Name": "AgentCommons.LogNode",
+      "Type": "String",
+      "Description": "",
+      "DefaultValue": "AgentCommons"
+    },
+    {
+      "Name": "AWSAuthentication.AccessKey",
+      "Type": "String",
+      "Description": "",
+      "DefaultValue": ""
+    },
+    {
+      "Name": "AWSAuthentication.ClientCertificateID",
+      "Type": "String",
+      "Description": "",
+      "DefaultValue": ""
+    },
+    {
+      "Name": "AWSAuthentication.Duration",
+      "Type": "Integer",
+      "Description": "",
+      "DefaultValue": "0"
+    },
+    {
+      "Name": "AWSAuthentication.ProfileARN",
+      "Type": "String",
+      "Description": "",
+      "DefaultValue": ""
+    },
+    {
+      "Name": "AWSAuthentication.RoleARN",
+      "Type": "String",
+      "Description": "",
+      "DefaultValue": ""
+    },
+    {
+      "Name": "AWSAuthentication.SecretAccessKey",
+      "Type": "String",
+      "Description": "",
+      "DefaultValue": ""
+    },
+    {
+      "Name": "AWSAuthentication.SessionName",
+      "Type": "String",
+      "Description": "",
+      "DefaultValue": ""
+    },
+    {
+      "Name": "AWSAuthentication.TrustAnchorARN",
+      "Type": "String",
+      "Description": "",
+      "DefaultValue": ""
+    },
+    {
+      "Name": "CommunityCommons.MergeMultiplePdfs_MaxAtOnce",
+      "Type": "Integer",
+      "Description": "Restricted to 10 files at once for Mendix Cloud v4 compatibility. If you need to merge more than 10 files increase the number here. Setting the value to <=0 means unlimited.\r\n\r\nNote: We very strongly recommend to not increase the number for applications running in Mendix Cloud v4.",
+      "DefaultValue": "10"
+    },
+    {
+      "Name": "ConversationalUI.EnableMarkdownViewer",
+      "Type": "Boolean",
+      "Description": "When set to true, assistant messages written in Markdown format are rendered as such. If set to false messages are rendered as plain text.",
+      "DefaultValue": "True"
+    },
+    {
+      "Name": "ConversationalUI.LogNode",
+      "Type": "String",
+      "Description": "",
+      "DefaultValue": "ConversationalUI"
+    },
+    {
+      "Name": "ConversationalUI.UserInputInstructions",
+      "Type": "String",
+      "Description": "The text that is displayed below the user input field in the chat. This can be used for keystroke instructions or general GenAI disclaimers.\r\nIf you leave it blank, nothing will be displayed.",
+      "DefaultValue": "Press Enter to submit, Shift+Enter for a new line. Please validate the output."
+    },
+    {
+      "Name": "Encryption.EncryptionKey",
+      "Type": "String",
+      "Description": "This key will be used to encrypt and decrypt values.\r\nThe length of this key must be 32 characters.",
+      "DefaultValue": "cc88950ed78c5c71db4c74b7517ac55a"
+    },
+    {
+      "Name": "Encryption.EncryptionPrefix",
+      "Type": "String",
+      "Description": "Prefix for stored encrypted values.\r\nThis value is used to determine whether the value has been already encrypted.\r\nThe prefix must be either {AES}, {AES2} or {AES3}.\r\nEncryption is only supported if the prefix is {AES3}.\r\nIt is not recommended to change this value.",
+      "DefaultValue": "{AES3}"
+    },
+    {
+      "Name": "Encryption.LegacyEncryptionKey",
+      "Type": "String",
+      "Description": "This key will be used to decrypt values that are encrypted with legacy algorithms.\r\nThe length of this key must be 16 characters.",
+      "DefaultValue": ""
+    },
+    {
+      "Name": "Encryption.LogNode",
+      "Type": "String",
+      "Description": "Node which appears in log messages for this module.",
+      "DefaultValue": "Encryption"
+    },
+    {
+      "Name": "FeedbackModule.ClientIdentifier",
+      "Type": "String",
+      "Description": "",
+      "DefaultValue": "Feedback Module 4.0.1"
+    },
+    {
+      "Name": "FeedbackModule.LocalStorageKey",
+      "Type": "String",
+      "Description": "",
+      "DefaultValue": "mxfeedback-form-data"
+    },
+    {
+      "Name": "GenAICommons.StoreTraces",
+      "Type": "Boolean",
+      "Description": "This controls whether Trace data is stored in the operations that follow the principles of GenAI Commons.\r\n\r\nIf StoreTraces is set to true, Usages are created as well even if the StoreUsageMetrics constant was set to false.",
+      "DefaultValue": "True"
+    },
+    {
+      "Name": "GenAICommons.StoreUsageMetrics",
+      "Type": "Boolean",
+      "Description": "This controls whether Usage data is stored in the operations that follow the principles of GenAI Commons. Currently only chat completions and embeddings support token usage storage.\r\n\r\nIf StoreTraces is set to true, Usages are created as well even if the StoreUsageMetrics constant was set to false.",
+      "DefaultValue": "True"
+    },
+    {
+      "Name": "GenAICommons.Trace_CleanUpAfterDays",
+      "Type": "Integer",
+      "Description": "Controls the cleanup interval in days for the Trace data. If a positive value is set, Trace records are kept for the specified amount of days (UTC), older records are deleted in ScE_Usage_Cleanup, if enabled for the environment in the Mendix Cloud portal.\r\nIf this constant is set to empty, zero or a negative value, nothing will be deleted.",
+      "DefaultValue": "0"
+    },
+    {
+      "Name": "GenAICommons.Usage_CleanUpAfterDays",
+      "Type": "Integer",
+      "Description": "Controls the cleanup interval in days for the Usage data. If a positive value is set, Usage records are kept for the specified amount of days (UTC), older records are deleted in ScE_Usage_Cleanup, if enabled for the environment in the Mendix Cloud portal.\r\nIf this constant is set to empty, zero or a negative value, nothing will be deleted.",
+      "DefaultValue": "0"
+    },
+    {
+      "Name": "MxGenAIConnector.DeployedModelArchitecture",
+      "Type": "String",
+      "Description": "",
+      "DefaultValue": "Mendix Cloud"
+    },
+    {
+      "Name": "MxGenAIConnector.MaxChunkBatchSize",
+      "Type": "Integer",
+      "Description": "",
+      "DefaultValue": "100"
+    },
+    {
+      "Name": "OpenAIConnector.RegEx_Function_Name",
+      "Type": "String",
+      "Description": "",
+      "DefaultValue": "^[a-zA-Z0-9_-]{1,64}$"
     }
   ],
-  "ScheduledEvents": [],
+  "ScheduledEvents": [
+    {
+      "Name": "GenAICommons.ScE_Trace_Cleanup",
+      "Description": "This is a cleanup of Trace data. See constant @GenAICommons.Trace_CleanUpAfterDays for more information."
+    },
+    {
+      "Name": "GenAICommons.ScE_Usage_Cleanup",
+      "Description": "This is a cleanup of Usage data (token consumption monitor). See constant @GenAICommons.Usage_CleanUpAfterDays for more information."
+    }
+  ],
   "Languages": [
     "en_US"
   ],
-  "Configuration": {
-    "SourceDatabaseType": "HSQLDB",
-    "SourceDatabaseName": "default",
-    "SourceBuiltInDatabasePath": "model/sampledata/data/database"
-  },
   "RequestHandlers": [
     {
       "Name": "/api/",
@@ -51,7 +237,7 @@
     },
     {
       "Name": "/p/",
-      "DefaultEnabled": false,
+      "DefaultEnabled": true,
       "MatchExactly": false
     }
   ]

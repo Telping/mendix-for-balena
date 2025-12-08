@@ -1,6 +1,6 @@
 {
-  "schemaVersion": "2.1",
-  "appName": "DockerDeploy-App",
+  "schemaVersion": "2.2",
+  "appName": "ThingyAgent",
   "published": [],
   "consumed": []
 }

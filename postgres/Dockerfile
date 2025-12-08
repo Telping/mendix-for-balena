@@ -1,1 +1,1 @@
-FROM arm32v7/postgres
+FROM postgres:15-bookworm
