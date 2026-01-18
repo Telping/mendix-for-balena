@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if appointment else 'New' }} Appointment - Boxty's Diary{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="mb-3">
+            <a href="{{ url_for('main.appointments_list') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Appointments
+            </a>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0 paw-icon">{{ 'Edit' if appointment else 'New' }} Appointment</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="title" class="form-label">Title *</label>
+                            <input type="text" class="form-control" id="title" name="title" required
+                                   value="{{ appointment.title if appointment else '' }}"
+                                   placeholder="e.g., Annual Checkup">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="appointment_type" class="form-label">Type *</label>
+                            <select class="form-select" id="appointment_type" name="appointment_type" required>
+                                {% for type_val, type_label, type_color in appointment_types %}
+                                <option value="{{ type_val }}"
+                                        {% if appointment and appointment.appointment_type == type_val %}selected{% endif %}
+                                        data-color="{{ type_color }}">
+                                    {{ type_label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="date" class="form-label">Date *</label>
+                            <input type="date" class="form-control" id="date" name="date" required
+                                   value="{{ appointment.date_time.strftime('%Y-%m-%d') if appointment else '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="time" class="form-label">Time</label>
+                            <input type="time" class="form-control" id="time" name="time"
+                                   value="{{ appointment.date_time.strftime('%H:%M') if appointment else '09:00' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="duration_minutes" class="form-label">Duration (minutes)</label>
+                            <input type="number" class="form-control" id="duration_minutes" name="duration_minutes"
+                                   min="5" max="480" placeholder="60"
+                                   value="{{ appointment.duration_minutes if appointment else '60' }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="location" name="location"
+                               value="{{ appointment.location if appointment else '' }}"
+                               placeholder="e.g., Happy Paws Veterinary Clinic">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"
+                                  placeholder="Add any notes or reminders...">{{ appointment.notes if appointment else '' }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="reminder_minutes" class="form-label">Reminder (minutes before)</label>
+                        <select class="form-select" id="reminder_minutes" name="reminder_minutes">
+                            <option value="">No reminder</option>
+                            <option value="15" {% if appointment and appointment.reminder_minutes == 15 %}selected{% endif %}>15 minutes</option>
+                            <option value="30" {% if appointment and appointment.reminder_minutes == 30 %}selected{% endif %}>30 minutes</option>
+                            <option value="60" {% if appointment and appointment.reminder_minutes == 60 %}selected{% endif %}>1 hour</option>
+                            <option value="120" {% if appointment and appointment.reminder_minutes == 120 %}selected{% endif %}>2 hours</option>
+                            <option value="1440" {% if appointment and appointment.reminder_minutes == 1440 %}selected{% endif %}>1 day</option>
+                            <option value="2880" {% if appointment and appointment.reminder_minutes == 2880 %}selected{% endif %}>2 days</option>
+                        </select>
+                    </div>
+
+                    {% if not appointment %}
+                    <!-- Recurrence options (only for new appointments) -->
+                    <div class="card mb-3 border-info">
+                        <div class="card-header bg-info bg-opacity-10">
+                            <i class="bi bi-arrow-repeat"></i> <strong>Recurrence</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="recurrence_frequency" class="form-label">Repeat</label>
+                                    <select class="form-select" id="recurrence_frequency" name="recurrence_frequency">
+                                        {% for freq_val, freq_label in recurrence_options %}
+                                        <option value="{{ freq_val }}">{{ freq_label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3" id="recurrence_end_container" style="display: none;">
+                                    <label for="recurrence_end_date" class="form-label">Until</label>
+                                    <input type="date" class="form-control" id="recurrence_end_date" name="recurrence_end_date">
+                                    <small class="text-muted">Leave blank for no end date (max 2 years)</small>
+                                </div>
+                            </div>
+                            <div id="recurrence_preview" class="alert alert-info d-none">
+                                <small><i class="bi bi-info-circle"></i> <span id="recurrence_preview_text"></span></small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-circle"></i> {{ 'Update' if appointment else 'Schedule' }} Appointment
+                        </button>
+                        <a href="{{ url_for('main.appointments_list') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default date to today if creating new appointment
+    {% if not appointment %}
+    document.getElementById('date').valueAsDate = new Date();
+
+    const recurrenceSelect = document.getElementById('recurrence_frequency');
+    const recurrenceEndContainer = document.getElementById('recurrence_end_container');
+    const recurrencePreview = document.getElementById('recurrence_preview');
+    const recurrencePreviewText = document.getElementById('recurrence_preview_text');
+
+    function updateRecurrenceUI() {
+        const frequency = recurrenceSelect.value;
+        if (frequency !== 'none') {
+            recurrenceEndContainer.style.display = 'block';
+            recurrencePreview.classList.remove('d-none');
+
+            // Set default end date based on frequency
+            const endDate = document.getElementById('recurrence_end_date');
+            if (!endDate.value) {
+                const date = new Date();
+                switch(frequency) {
+                    case 'weekly': date.setMonth(date.getMonth() + 3); break;
+                    case 'monthly': date.setFullYear(date.getFullYear() + 1); break;
+                    case 'every_2_months': date.setFullYear(date.getFullYear() + 1); break;
+                    case 'every_3_months': date.setFullYear(date.getFullYear() + 2); break;
+                    case 'every_6_months': date.setFullYear(date.getFullYear() + 2); break;
+                    case 'yearly': date.setFullYear(date.getFullYear() + 3); break;
+                }
+                endDate.valueAsDate = date;
+            }
+
+            updatePreviewText();
+        } else {
+            recurrenceEndContainer.style.display = 'none';
+            recurrencePreview.classList.add('d-none');
+        }
+    }
+
+    function updatePreviewText() {
+        const frequency = recurrenceSelect.value;
+        const freqLabel = recurrenceSelect.options[recurrenceSelect.selectedIndex].text;
+        const endDate = document.getElementById('recurrence_end_date').value;
+
+        if (frequency !== 'none' && endDate) {
+            recurrencePreviewText.textContent = `This will create appointments ${freqLabel.toLowerCase()} until ${new Date(endDate).toLocaleDateString()}`;
+        }
+    }
+
+    recurrenceSelect.addEventListener('change', updateRecurrenceUI);
+    document.getElementById('recurrence_end_date').addEventListener('change', updatePreviewText);
+    {% endif %}
+
+    // Type color preview
+    const typeSelect = document.getElementById('appointment_type');
+    typeSelect.addEventListener('change', function() {
+        const color = this.options[this.selectedIndex].dataset.color;
+        this.style.borderLeftWidth = '4px';
+        this.style.borderLeftColor = color;
+    });
+    // Initialize color
+    typeSelect.dispatchEvent(new Event('change'));
+});
+</script>
+{% endblock %}

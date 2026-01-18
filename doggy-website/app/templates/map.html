@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Map View - Boxty's Diary{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h1 class="paw-icon">Boxty's Journey Map</h1>
+        <p class="text-muted">Explore all the places Boxty has been</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div id="map" style="height: 600px; width: 100%;"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize map centered on first entry or default location
+    {% if entries %}
+        const map = L.map('map').setView([{{ entries[0].latitude }}, {{ entries[0].longitude }}], 10);
+    {% else %}
+        const map = L.map('map').setView([51.505, -0.09], 13);
+    {% endif %}
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+    }).addTo(map);
+
+    // Custom paw print icon
+    const pawIcon = L.divIcon({
+        html: '<div style="font-size: 24px;">🐾</div>',
+        className: 'paw-marker',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+    });
+
+    // Add markers for all entries
+    const markers = [];
+    {% for entry in entries %}
+    (function() {
+        const marker = L.marker(
+            [{{ entry.latitude }}, {{ entry.longitude }}],
+            {icon: pawIcon}
+        ).addTo(map);
+
+        const popupContent = `
+            <div style="min-width: 200px;">
+                <h6><a href="{{ url_for('main.view_entry', entry_id=entry.id) }}">{{ entry.title }}</a></h6>
+                <p class="mb-1"><small>{{ entry.date.strftime('%B %d, %Y') }}</small></p>
+                {% if entry.location_name %}
+                    <p class="mb-1"><small><i class="bi bi-geo-alt"></i> {{ entry.location_name }}</small></p>
+                {% endif %}
+                {% if entry.media %}
+                    {% set first_media = entry.media[0] %}
+                    {% if first_media.media_type == 'image' %}
+                        <img src="{{ url_for('static', filename=first_media.file_path) }}"
+                             style="width: 100%; max-height: 150px; object-fit: cover; margin-top: 5px; border-radius: 5px;">
+                    {% endif %}
+                {% endif %}
+            </div>
+        `;
+
+        marker.bindPopup(popupContent);
+        markers.push(marker);
+    })();
+    {% endfor %}
+
+    // Fit map to show all markers
+    if (markers.length > 0) {
+        const group = new L.featureGroup(markers);
+        map.fitBounds(group.getBounds().pad(0.1));
+    }
+</script>
+{% endblock %}

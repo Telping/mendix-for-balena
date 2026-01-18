@@ -1,0 +1,37 @@
+╔════════════════════════════════════════════════════════════╗
+║         🐾 HOW TO ADD BOXTY'S PHOTO TO HOMEPAGE 🐾        ║
+╚════════════════════════════════════════════════════════════╝
+
+QUICK METHOD:
+
+  1. Run: ./add-boxty-photo.sh
+  2. Drag and drop Boxty's photo when prompted
+  3. Done!
+
+MANUAL METHOD:
+
+  cp /path/to/boxty-photo.jpg app/static/images/boxty-hero.jpg
+
+WHAT YOU NEED:
+
+  ✓ One of Boxty's photos
+  ✓ JPG, PNG, or WEBP format
+  ✓ Recommended: 800x600px or larger
+  ✓ Target location: app/static/images/boxty-hero.jpg
+
+AFTER ADDING PHOTO:
+
+  ./start-local.sh
+
+  Then open: http://localhost:5000
+
+NO PHOTO YET?
+
+  No worries! The app works fine without it.
+  A cute dog emoji placeholder shows instead.
+
+NEED HELP?
+
+  See: HOMEPAGE-SETUP.md for detailed guide
+
+════════════════════════════════════════════════════════════

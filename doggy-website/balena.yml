@@ -1,0 +1,17 @@
+name: boxty-diary
+type: sw.application
+description: A digital diary for tracking Boxty's adventures with photos, videos, and locations
+version: 1.0.0
+
+data:
+  applicationEnvironmentVariables:
+    - SECRET_KEY: "change-this-in-balena-dashboard"
+    - FLASK_ENV: "production"
+    - DATABASE_URL: "sqlite:///boxty.db"
+
+  defaultDeviceType: raspberrypi4-64
+
+  supportedDeviceTypes:
+    - raspberrypi4-64
+    - raspberrypi3-64
+    - raspberrypi3

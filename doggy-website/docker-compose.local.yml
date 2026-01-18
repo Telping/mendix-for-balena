@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-me}
+      - DATABASE_URL=sqlite:///boxty.db
+      - FLASK_ENV=${FLASK_ENV:-production}
+    volumes:
+      - ./app/static/uploads:/app/app/static/uploads
+      - ./instance:/app/instance
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

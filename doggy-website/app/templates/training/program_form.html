@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if program else 'New' }} Training Program - Boxty's Diary{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="mb-3">
+            <a href="{{ url_for('main.training_programs') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Programs
+            </a>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0 paw-icon">{{ 'Edit' if program else 'New' }} Training Program</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Program Name *</label>
+                        <input type="text" class="form-control" id="name" name="name" required
+                               value="{{ program.name if program else '' }}"
+                               placeholder="e.g., Basic Obedience Training">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"
+                                  placeholder="Describe the training program goals and objectives...">{{ program.description if program else '' }}</textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="start_date" class="form-label">Start Date *</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" required
+                                   value="{{ program.start_date.strftime('%Y-%m-%d') if program else '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="end_date" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date"
+                                   value="{{ program.end_date.strftime('%Y-%m-%d') if program and program.end_date else '' }}">
+                            <small class="form-text text-muted">Leave blank if ongoing.</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_ongoing" name="is_ongoing"
+                                   {% if program and program.is_ongoing %}checked{% endif %}>
+                            <label class="form-check-label" for="is_ongoing">
+                                <strong>Ongoing Program</strong> - No fixed end date
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-circle"></i> {{ 'Update' if program else 'Create' }} Program
+                        </button>
+                        <a href="{{ url_for('main.training_programs') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Set default start date to today if creating new program
+{% if not program %}
+document.getElementById('start_date').valueAsDate = new Date();
+{% endif %}
+
+// Toggle end date field based on ongoing checkbox
+document.getElementById('is_ongoing').addEventListener('change', function() {
+    document.getElementById('end_date').disabled = this.checked;
+    if (this.checked) {
+        document.getElementById('end_date').value = '';
+    }
+});
+
+// Initialize state
+if (document.getElementById('is_ongoing').checked) {
+    document.getElementById('end_date').disabled = true;
+}
+</script>
+{% endblock %}

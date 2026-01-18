@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if activity else 'New' }} Activity - {{ program.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="mb-3">
+            <a href="{{ url_for('main.view_training_program', program_id=program.id) }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to {{ program.name }}
+            </a>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0 paw-icon">{{ 'Edit' if activity else 'New' }} Weekly Activity</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Activity Name *</label>
+                        <input type="text" class="form-control" id="name" name="name" required
+                               value="{{ activity.name if activity else '' }}"
+                               placeholder="e.g., Morning Walk Training">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"
+                                  placeholder="Describe the activity...">{{ activity.description if activity else '' }}</textarea>
+                    </div>
+
+                    {% if not activity %}
+                    <!-- Recurring option - only for new activities -->
+                    <div class="card mb-3 border-info">
+                        <div class="card-header bg-info bg-opacity-10">
+                            <div class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" id="is_recurring" name="is_recurring">
+                                <label class="form-check-label" for="is_recurring">
+                                    <i class="bi bi-arrow-repeat"></i> <strong>Add to multiple days</strong>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="card-body" id="recurring_options" style="display: none;">
+                            <p class="text-muted small mb-2">Select which days to add this activity:</p>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for i in range(7) %}
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input recurring-day" type="checkbox"
+                                           name="recurring_days" value="{{ i }}"
+                                           id="recurring_day_{{ i }}">
+                                    <label class="form-check-label" for="recurring_day_{{ i }}">
+                                        {{ day_names[i][:3] }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="select_weekdays">Weekdays</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="select_weekend">Weekend</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="select_all_days">All Days</button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="row" id="single_day_row">
+                        <div class="col-md-4 mb-3">
+                            <label for="day_of_week" class="form-label">Day of Week *</label>
+                            <select class="form-select" id="day_of_week" name="day_of_week" {% if not activity %}required{% endif %}>
+                                {% for i in range(7) %}
+                                <option value="{{ i }}" {% if activity and activity.day_of_week == i %}selected{% endif %}>
+                                    {{ day_names[i] }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label for="time" class="form-label">Time (Optional)</label>
+                            <input type="time" class="form-control" id="time" name="time"
+                                   value="{{ activity.time.strftime('%H:%M') if activity and activity.time else '' }}">
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label for="duration_minutes" class="form-label">Duration (minutes)</label>
+                            <input type="number" class="form-control" id="duration_minutes" name="duration_minutes"
+                                   min="1" max="480" placeholder="e.g., 30"
+                                   value="{{ activity.duration_minutes if activity and activity.duration_minutes else '' }}">
+                        </div>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <i class="bi bi-file-earmark"></i> Reference Materials (Optional)
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted small">Select training resources to reference for this activity.</p>
+                            {% if resources %}
+                            <div class="row">
+                                {% for resource in resources %}
+                                <div class="col-md-6 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox"
+                                               name="resources" value="{{ resource.id }}"
+                                               id="resource_{{ resource.id }}"
+                                               {% if activity and resource in activity.resources %}checked{% endif %}>
+                                        <label class="form-check-label" for="resource_{{ resource.id }}">
+                                            <i class="{{ resource.icon_class }}"></i>
+                                            {{ resource.title }}
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted mb-0">No resources available. <a href="{{ url_for('main.new_training_resource') }}">Upload one</a>.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-circle"></i> {{ 'Update' if activity else 'Add' }} Activity
+                        </button>
+                        <a href="{{ url_for('main.view_training_program', program_id=program.id) }}"
+                           class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if not activity %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const isRecurring = document.getElementById('is_recurring');
+    const recurringOptions = document.getElementById('recurring_options');
+    const singleDayRow = document.getElementById('single_day_row');
+    const dayOfWeekSelect = document.getElementById('day_of_week');
+    const recurringDays = document.querySelectorAll('.recurring-day');
+
+    // Toggle recurring options visibility
+    isRecurring.addEventListener('change', function() {
+        if (this.checked) {
+            recurringOptions.style.display = 'block';
+            singleDayRow.style.display = 'none';
+            dayOfWeekSelect.removeAttribute('required');
+        } else {
+            recurringOptions.style.display = 'none';
+            singleDayRow.style.display = 'flex';
+            dayOfWeekSelect.setAttribute('required', '');
+            // Uncheck all recurring days
+            recurringDays.forEach(cb => cb.checked = false);
+        }
+    });
+
+    // Quick select buttons
+    document.getElementById('select_weekdays').addEventListener('click', function() {
+        recurringDays.forEach(cb => {
+            cb.checked = parseInt(cb.value) < 5; // Mon-Fri
+        });
+    });
+
+    document.getElementById('select_weekend').addEventListener('click', function() {
+        recurringDays.forEach(cb => {
+            cb.checked = parseInt(cb.value) >= 5; // Sat-Sun
+        });
+    });
+
+    document.getElementById('select_all_days').addEventListener('click', function() {
+        recurringDays.forEach(cb => cb.checked = true);
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}New Entry - Boxty's Diary{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0 paw-icon">New Diary Entry</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" id="entryForm">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title *</label>
+                        <input type="text" class="form-control" id="title" name="title" required
+                               placeholder="e.g., First day at the park">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Date *</label>
+                        <input type="datetime-local" class="form-control" id="date" name="date" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="4"
+                                  placeholder="Tell us about this special moment..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="media" class="form-label">
+                            <i class="bi bi-camera-fill"></i> Photos & Videos
+                        </label>
+                        <input type="file" class="form-control" id="media" name="media"
+                               multiple accept="image/*,video/*">
+                        <small class="form-text text-muted">
+                            You can upload multiple images and videos
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="tags" class="form-label">Tags</label>
+                        <input type="text" class="form-control" id="tags" name="tags"
+                               placeholder="e.g., park, playtime, friends (comma-separated)">
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <i class="bi bi-geo-alt-fill"></i> Location
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="location_name" class="form-label">Location Name</label>
+                                <input type="text" class="form-control" id="location_name" name="location_name"
+                                       placeholder="e.g., Central Park">
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="latitude" class="form-label">Latitude</label>
+                                    <input type="number" step="any" class="form-control" id="latitude" name="latitude"
+                                           placeholder="e.g., 40.785091">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="longitude" class="form-label">Longitude</label>
+                                    <input type="number" step="any" class="form-control" id="longitude" name="longitude"
+                                           placeholder="e.g., -73.968285">
+                                </div>
+                            </div>
+
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="getCurrentLocation">
+                                <i class="bi bi-crosshair"></i> Use Current Location
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-circle"></i> Save Entry
+                        </button>
+                        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Set default date to now
+    document.getElementById('date').valueAsDate = new Date();
+
+    // Get current location
+    document.getElementById('getCurrentLocation').addEventListener('click', function() {
+        if (navigator.geolocation) {
+            this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Getting location...';
+            const btn = this;
+
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    document.getElementById('latitude').value = position.coords.latitude;
+                    document.getElementById('longitude').value = position.coords.longitude;
+                    btn.innerHTML = '<i class="bi bi-check-circle"></i> Location captured!';
+                    btn.classList.remove('btn-outline-secondary');
+                    btn.classList.add('btn-success');
+                },
+                function(error) {
+                    btn.innerHTML = '<i class="bi bi-x-circle"></i> Could not get location';
+                    btn.classList.remove('btn-outline-secondary');
+                    btn.classList.add('btn-danger');
+                    console.error('Error getting location:', error);
+                }
+            );
+        } else {
+            alert('Geolocation is not supported by your browser');
+        }
+    });
+
+    // Preview selected files
+    document.getElementById('media').addEventListener('change', function(e) {
+        const fileCount = e.target.files.length;
+        if (fileCount > 0) {
+            const label = document.querySelector('label[for="media"]');
+            label.innerHTML = `<i class="bi bi-camera-fill"></i> Photos & Videos (${fileCount} selected)`;
+        }
+    });
+</script>
+{% endblock %}

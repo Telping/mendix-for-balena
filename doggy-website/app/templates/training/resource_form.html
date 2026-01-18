@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if resource else 'Upload' }} Resource - Boxty's Diary{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="mb-3">
+            <a href="{{ url_for('main.training_resources') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Resources
+            </a>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0 paw-icon">{{ 'Edit' if resource else 'Upload' }} Training Resource</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    {% if not resource %}
+                    <div class="mb-3">
+                        <label for="file" class="form-label">File *</label>
+                        <input type="file" class="form-control" id="file" name="file" required>
+                        <small class="form-text text-muted">
+                            Supports PDFs, documents, images, videos, spreadsheets, and more.
+                        </small>
+                    </div>
+                    {% else %}
+                    <div class="mb-3">
+                        <label class="form-label">Current File</label>
+                        <div class="d-flex align-items-center p-3 bg-light rounded">
+                            <i class="{{ resource.icon_class }} fs-3 me-3"></i>
+                            <div>
+                                <strong>{{ resource.original_filename }}</strong>
+                                <br><small class="text-muted">{{ resource.file_extension|upper }} - {{ resource.file_size_formatted }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title {% if not resource %}(optional){% else %}*{% endif %}</label>
+                        <input type="text" class="form-control" id="title" name="title"
+                               value="{{ resource.title if resource else '' }}"
+                               placeholder="e.g., Puppy Training Guide"
+                               {% if resource %}required{% endif %}>
+                        {% if not resource %}
+                        <small class="form-text text-muted">Leave blank to use the filename.</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"
+                                  placeholder="Describe this resource...">{{ resource.description if resource else '' }}</textarea>
+                    </div>
+
+                    {% if categories %}
+                    <div class="mb-3">
+                        <label class="form-label">Categories</label>
+                        <div class="row">
+                            {% for cat in categories %}
+                            <div class="col-md-6 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                           name="categories" value="{{ cat.id }}"
+                                           id="cat_{{ cat.id }}"
+                                           {% if resource and cat in resource.categories %}checked{% endif %}>
+                                    <label class="form-check-label" for="cat_{{ cat.id }}">
+                                        <span class="badge me-1" style="background-color: {{ cat.color }}">{{ cat.name }}</span>
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="mb-3">
+                        <label class="form-label">Categories</label>
+                        <p class="text-muted">No categories yet. <a href="{{ url_for('main.new_training_category') }}">Create one</a>.</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="tags" class="form-label">Tags</label>
+                        <input type="text" class="form-control" id="tags" name="tags"
+                               value="{% if resource %}{{ resource.tags|map(attribute='name')|join(', ') }}{% endif %}"
+                               placeholder="e.g., beginner, obedience, tricks">
+                        <small class="form-text text-muted">Separate tags with commas.</small>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-circle"></i> {{ 'Update' if resource else 'Upload' }} Resource
+                        </button>
+                        <a href="{{ url_for('main.training_resources') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

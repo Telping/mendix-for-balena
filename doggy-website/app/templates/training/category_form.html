@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if category else 'New' }} Category - Boxty's Diary{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-6 mx-auto">
+        <div class="mb-3">
+            <a href="{{ url_for('main.training_categories') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Categories
+            </a>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0 paw-icon">{{ 'Edit' if category else 'New' }} Category</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name *</label>
+                        <input type="text" class="form-control" id="name" name="name" required
+                               value="{{ category.name if category else '' }}"
+                               placeholder="e.g., Obedience, Agility, Health">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"
+                                  placeholder="Describe this category...">{{ category.description if category else '' }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="color" class="form-label">Color</label>
+                        <div class="d-flex align-items-center">
+                            <input type="color" class="form-control form-control-color me-2"
+                                   id="color" name="color"
+                                   value="{{ category.color if category else '#8B4513' }}">
+                            <span class="badge" id="colorPreview"
+                                  style="background-color: {{ category.color if category else '#8B4513' }}">
+                                Preview
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-circle"></i> {{ 'Update' if category else 'Create' }} Category
+                        </button>
+                        <a href="{{ url_for('main.training_categories') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('color').addEventListener('input', function(e) {
+    document.getElementById('colorPreview').style.backgroundColor = e.target.value;
+});
+</script>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Training Resources - Boxty's Diary{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="paw-icon">Training Resources</h2>
+    <div>
+        <a href="{{ url_for('main.training_categories') }}" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-tags"></i> Categories
+        </a>
+        <a href="{{ url_for('main.new_training_resource') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Upload Resource
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <select name="category" class="form-select">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if selected_category == cat.id %}selected{% endif %}>
+                        {{ cat.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="type" class="form-select">
+                    <option value="">All Types</option>
+                    <option value="document" {% if selected_type == 'document' %}selected{% endif %}>Documents</option>
+                    <option value="video" {% if selected_type == 'video' %}selected{% endif %}>Videos</option>
+                    <option value="image" {% if selected_type == 'image' %}selected{% endif %}>Images</option>
+                    <option value="spreadsheet" {% if selected_type == 'spreadsheet' %}selected{% endif %}>Spreadsheets</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <input type="text" name="search" class="form-control"
+                       placeholder="Search resources..." value="{{ search }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-secondary w-100">
+                    <i class="bi bi-search"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resource Grid -->
+{% if resources %}
+<div class="row">
+    {% for resource in resources %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-start mb-2">
+                    <i class="{{ resource.icon_class }} fs-2 me-3 text-secondary"></i>
+                    <div class="flex-grow-1">
+                        <h5 class="card-title mb-1">{{ resource.title }}</h5>
+                        <small class="text-muted">{{ resource.file_extension|upper }} - {{ resource.file_size_formatted }}</small>
+                    </div>
+                </div>
+
+                {% if resource.description %}
+                <p class="card-text small">{{ resource.description[:100] }}{% if resource.description|length > 100 %}...{% endif %}</p>
+                {% endif %}
+
+                {% if resource.categories %}
+                <div class="mb-2">
+                    {% for cat in resource.categories %}
+                    <span class="badge" style="background-color: {{ cat.color }}">{{ cat.name }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if resource.tags %}
+                <div class="mb-2">
+                    {% for tag in resource.tags %}
+                    <span class="tag" style="font-size: 0.75rem; padding: 3px 8px;">{{ tag.name }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-transparent">
+                <a href="{{ url_for('main.view_training_resource', resource_id=resource.id) }}"
+                   class="btn btn-sm btn-outline-primary">View</a>
+                <a href="{{ url_for('main.download_training_resource', resource_id=resource.id) }}"
+                   class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-download"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-folder-x fs-1 text-muted"></i>
+    <h4 class="mt-3">No resources found</h4>
+    <p class="text-muted">Upload your first training resource to get started.</p>
+    <a href="{{ url_for('main.new_training_resource') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Upload Resource
+    </a>
+</div>
+{% endif %}
+{% endblock %}

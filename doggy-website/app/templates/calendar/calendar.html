@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+
+{% block title %}Calendar - Boxty's Diary{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+<style>
+    #calendar {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+
+    .fc-event {
+        cursor: pointer;
+    }
+
+    .fc-event-title {
+        font-weight: 500;
+    }
+
+    /* Legend styles */
+    .calendar-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .legend-color {
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+    }
+
+    /* Day click modal */
+    .day-events-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .event-item {
+        padding: 0.75rem;
+        border-left: 4px solid;
+        margin-bottom: 0.5rem;
+        background: #f8f9fa;
+        border-radius: 0 4px 4px 0;
+    }
+
+    .event-item.diary { border-left-color: #8B4513; }
+    .event-item.training { border-left-color: #007bff; }
+    .event-item.appointment { border-left-color: inherit; }
+
+    /* Responsive calendar */
+    @media (max-width: 768px) {
+        .fc .fc-toolbar {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .fc .fc-toolbar-title {
+            font-size: 1.25rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="paw-icon">Calendar</h2>
+    <div class="btn-group">
+        <a href="{{ url_for('main.new_entry') }}" class="btn btn-outline-primary">
+            <i class="bi bi-journal-plus"></i> Diary Entry
+        </a>
+        <a href="{{ url_for('main.new_appointment') }}" class="btn btn-outline-success">
+            <i class="bi bi-calendar-plus"></i> Appointment
+        </a>
+    </div>
+</div>
+
+<!-- Legend -->
+<div class="calendar-legend">
+    <div class="legend-item">
+        <span class="legend-color" style="background-color: #8B4513;"></span>
+        <span>Diary Entries</span>
+    </div>
+    <div class="legend-item">
+        <span class="legend-color" style="background-color: #007bff;"></span>
+        <span>Training Activities</span>
+    </div>
+    {% for type_val, type_label, type_color in appointment_types %}
+    <div class="legend-item">
+        <span class="legend-color" style="background-color: {{ type_color }};"></span>
+        <span>{{ type_label }}</span>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Calendar container -->
+<div class="card">
+    <div class="card-body">
+        <div id="calendar"></div>
+    </div>
+</div>
+
+<!-- Day Details Modal -->
+<div class="modal fade" id="dayModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-calendar-day"></i>
+                    <span id="dayModalTitle">Events</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="dayModalLoading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <div id="dayModalContent" class="day-events-list" style="display: none;">
+                    <!-- Diary Entries Section -->
+                    <div id="diarySection" style="display: none;">
+                        <h6 class="text-muted mb-2"><i class="bi bi-journal"></i> Diary Entries</h6>
+                        <div id="diaryList"></div>
+                    </div>
+
+                    <!-- Training Section -->
+                    <div id="trainingSection" class="mt-3" style="display: none;">
+                        <h6 class="text-muted mb-2"><i class="bi bi-mortarboard"></i> Training Activities</h6>
+                        <div id="trainingList"></div>
+                    </div>
+
+                    <!-- Appointments Section -->
+                    <div id="appointmentsSection" class="mt-3" style="display: none;">
+                        <h6 class="text-muted mb-2"><i class="bi bi-calendar-check"></i> Appointments</h6>
+                        <div id="appointmentsList"></div>
+                    </div>
+
+                    <div id="noEventsMessage" class="text-center text-muted py-4" style="display: none;">
+                        <i class="bi bi-calendar-x fs-1"></i>
+                        <p class="mt-2">No events on this day</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="btn-group">
+                    <a href="#" id="addDiaryLink" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-journal-plus"></i> Add Entry
+                    </a>
+                    <a href="{{ url_for('main.new_appointment') }}" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-calendar-plus"></i> Add Appointment
+                    </a>
+                </div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const calendarEl = document.getElementById('calendar');
+    const dayModal = new bootstrap.Modal(document.getElementById('dayModal'));
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,listWeek'
+        },
+        events: '{{ url_for("main.api_calendar_events") }}',
+        eventClick: function(info) {
+            // Navigate to the event's detail page
+            if (info.event.url) {
+                window.location.href = info.event.url;
+                info.jsEvent.preventDefault();
+            }
+        },
+        dateClick: function(info) {
+            showDayDetails(info.dateStr);
+        },
+        eventDidMount: function(info) {
+            // Add tooltip with event details
+            if (info.event.extendedProps.description) {
+                info.el.title = info.event.extendedProps.description;
+            }
+        },
+        loading: function(isLoading) {
+            // Could add a loading indicator here
+        },
+        dayMaxEvents: 3,  // Show "+X more" when there are too many events
+        moreLinkClick: function(info) {
+            showDayDetails(info.date.toISOString().split('T')[0]);
+            return 'none';  // Don't navigate, we'll show the modal
+        }
+    });
+
+    calendar.render();
+
+    // Show day details in modal
+    function showDayDetails(dateStr) {
+        const modalTitle = document.getElementById('dayModalTitle');
+        const loading = document.getElementById('dayModalLoading');
+        const content = document.getElementById('dayModalContent');
+
+        // Format date for display
+        const date = new Date(dateStr + 'T12:00:00');
+        modalTitle.textContent = date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        // Update add diary link with date
+        document.getElementById('addDiaryLink').href = '{{ url_for("main.new_entry") }}?date=' + dateStr;
+
+        // Show loading
+        loading.style.display = 'block';
+        content.style.display = 'none';
+
+        dayModal.show();
+
+        // Fetch day's events
+        fetch(`/api/calendar/day/${dateStr}`)
+            .then(response => response.json())
+            .then(data => {
+                loading.style.display = 'none';
+                content.style.display = 'block';
+
+                // Clear previous content
+                document.getElementById('diaryList').innerHTML = '';
+                document.getElementById('trainingList').innerHTML = '';
+                document.getElementById('appointmentsList').innerHTML = '';
+
+                let hasEvents = false;
+
+                // Diary entries
+                if (data.diary_entries && data.diary_entries.length > 0) {
+                    hasEvents = true;
+                    document.getElementById('diarySection').style.display = 'block';
+                    data.diary_entries.forEach(entry => {
+                        document.getElementById('diaryList').innerHTML += `
+                            <div class="event-item diary">
+                                <strong>${entry.title}</strong>
+                                ${entry.description ? `<p class="mb-0 small text-muted">${entry.description.substring(0, 100)}...</p>` : ''}
+                                <a href="/entry/${entry.id}" class="btn btn-sm btn-link p-0 mt-1">View</a>
+                            </div>
+                        `;
+                    });
+                } else {
+                    document.getElementById('diarySection').style.display = 'none';
+                }
+
+                // Training activities
+                if (data.training_activities && data.training_activities.length > 0) {
+                    hasEvents = true;
+                    document.getElementById('trainingSection').style.display = 'block';
+                    data.training_activities.forEach(activity => {
+                        const timeStr = activity.time ? activity.time : '';
+                        document.getElementById('trainingList').innerHTML += `
+                            <div class="event-item training">
+                                <strong>${activity.name}</strong>
+                                <span class="badge bg-primary ms-2">${activity.program_name}</span>
+                                ${timeStr ? `<br><small class="text-muted"><i class="bi bi-clock"></i> ${timeStr}</small>` : ''}
+                                ${activity.duration_minutes ? `<small class="text-muted ms-2">(${activity.duration_minutes} min)</small>` : ''}
+                            </div>
+                        `;
+                    });
+                } else {
+                    document.getElementById('trainingSection').style.display = 'none';
+                }
+
+                // Appointments
+                if (data.appointments && data.appointments.length > 0) {
+                    hasEvents = true;
+                    document.getElementById('appointmentsSection').style.display = 'block';
+                    data.appointments.forEach(appt => {
+                        const typeColors = {
+                            'vet': '#28a745',
+                            'grooming': '#17a2b8',
+                            'training_class': '#007bff',
+                            'vaccination': '#dc3545',
+                            'checkup': '#fd7e14',
+                            'other': '#6c757d'
+                        };
+                        const color = typeColors[appt.appointment_type] || '#6c757d';
+                        const time = new Date(appt.date_time).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit'
+                        });
+
+                        document.getElementById('appointmentsList').innerHTML += `
+                            <div class="event-item" style="border-left-color: ${color};">
+                                <strong>${appt.title}</strong>
+                                <span class="badge" style="background-color: ${color};">${appt.appointment_type.replace('_', ' ')}</span>
+                                <br><small class="text-muted"><i class="bi bi-clock"></i> ${time}</small>
+                                ${appt.location ? `<br><small class="text-muted"><i class="bi bi-geo-alt"></i> ${appt.location}</small>` : ''}
+                                <br><a href="/appointments/${appt.id}" class="btn btn-sm btn-link p-0 mt-1">View</a>
+                            </div>
+                        `;
+                    });
+                } else {
+                    document.getElementById('appointmentsSection').style.display = 'none';
+                }
+
+                // Show no events message
+                document.getElementById('noEventsMessage').style.display = hasEvents ? 'none' : 'block';
+            })
+            .catch(error => {
+                console.error('Error fetching day events:', error);
+                loading.style.display = 'none';
+                content.style.display = 'block';
+                content.innerHTML = '<div class="alert alert-danger">Error loading events</div>';
+            });
+    }
+});
+</script>
+{% endblock %}

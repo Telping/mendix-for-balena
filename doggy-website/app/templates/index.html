@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Hero Section with Boxty's Photo -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card hero-card">
+            <div class="row g-0">
+                <div class="col-md-4">
+                    <img src="{{ url_for('static', filename='images/boxty-hero.jpg') }}"
+                         class="img-fluid rounded-start hero-image"
+                         alt="Boxty"
+                         onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22400%22%3E%3Crect fill=%22%23D2691E%22 width=%22400%22 height=%22400%22/%3E%3Ctext fill=%22white%22 font-size=%2280%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22%3E🐕%3C/text%3E%3C/svg%3E';">
+                </div>
+                <div class="col-md-8">
+                    <div class="card-body p-4">
+                        <h1 class="card-title display-4 paw-icon">Boxty's Adventures</h1>
+                        <p class="card-text lead">
+                            Welcome to Boxty's digital diary! Follow along as we document the amazing
+                            journey of the most adorable pup. Every photo, every place, every precious moment.
+                        </p>
+                        <div class="d-flex gap-2 mt-4">
+                            <a href="{{ url_for('main.new_entry') }}" class="btn btn-primary btn-lg">
+                                <i class="bi bi-plus-circle"></i> Add New Memory
+                            </a>
+                            <a href="{{ url_for('main.map_view') }}" class="btn btn-outline-secondary btn-lg">
+                                <i class="bi bi-map"></i> View Map
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if entries %}
+    <div class="row">
+        {% for entry in entries %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                {% if entry.media %}
+                    {% set first_media = entry.media[0] %}
+                    {% if first_media.media_type == 'image' %}
+                        <img src="{{ url_for('static', filename=first_media.file_path) }}"
+                             class="card-img-top"
+                             alt="{{ entry.title }}"
+                             style="height: 250px; object-fit: cover;">
+                    {% elif first_media.media_type == 'video' %}
+                        <video class="card-img-top" style="height: 250px; object-fit: cover;" controls>
+                            <source src="{{ url_for('static', filename=first_media.file_path) }}" type="video/mp4">
+                        </video>
+                    {% endif %}
+                {% else %}
+                    <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center"
+                         style="height: 250px;">
+                        <span style="font-size: 4rem;">🐕</span>
+                    </div>
+                {% endif %}
+
+                <div class="card-body">
+                    <h5 class="card-title">{{ entry.title }}</h5>
+                    <p class="text-muted">
+                        <i class="bi bi-calendar3"></i> {{ entry.date.strftime('%B %d, %Y') }}
+                    </p>
+
+                    {% if entry.location_name %}
+                        <p class="text-muted">
+                            <i class="bi bi-geo-alt"></i> {{ entry.location_name }}
+                        </p>
+                    {% endif %}
+
+                    {% if entry.description %}
+                        <p class="card-text">
+                            {{ entry.description[:100] }}{% if entry.description|length > 100 %}...{% endif %}
+                        </p>
+                    {% endif %}
+
+                    {% if entry.tags %}
+                        <div class="mb-2">
+                            {% for tag in entry.tags %}
+                                <span class="tag">{{ tag.name }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <a href="{{ url_for('main.view_entry', entry_id=entry.id) }}"
+                       class="btn btn-primary btn-sm">
+                        View Full Entry <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-5">
+        <div style="font-size: 5rem;">🐾</div>
+        <h3 class="mt-3">No entries yet!</h3>
+        <p class="text-muted">Start documenting Boxty's amazing journey</p>
+        <a href="{{ url_for('main.new_entry') }}" class="btn btn-primary btn-lg mt-3">
+            Create First Entry
+        </a>
+    </div>
+{% endif %}
+{% endblock %}

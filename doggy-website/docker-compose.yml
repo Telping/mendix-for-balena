@@ -1,0 +1,22 @@
+version: '2.1'
+
+services:
+  boxty-diary:
+    build: .
+    privileged: false
+    restart: always
+    ports:
+      - "80:5000"
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-change-this-in-production}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///boxty.db}
+      - FLASK_ENV=${FLASK_ENV:-production}
+    volumes:
+      - 'uploads-data:/app/app/static/uploads'
+      - 'db-data:/app/instance'
+    labels:
+      io.balena.features.balena-socket: '1'
+
+volumes:
+  uploads-data:
+  db-data:

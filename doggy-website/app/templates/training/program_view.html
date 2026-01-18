@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}{{ program.name }} - Boxty's Diary{% endblock %}
+
+{% block extra_css %}
+<style>
+    .week-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 10px;
+    }
+
+    @media (max-width: 992px) {
+        .week-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 576px) {
+        .week-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .day-column {
+        background: white;
+        border-radius: 10px;
+        min-height: 200px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .day-header {
+        background-color: var(--boxty-light);
+        color: white;
+        padding: 10px;
+        border-radius: 10px 10px 0 0;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .activity-card {
+        background: var(--boxty-cream);
+        border-radius: 8px;
+        padding: 10px;
+        margin: 8px;
+        border-left: 3px solid var(--boxty-brown);
+    }
+
+    .activity-time {
+        font-size: 0.85rem;
+        color: var(--boxty-brown);
+        font-weight: 500;
+    }
+
+    .status-badge {
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{{ url_for('main.training_programs') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Programs
+    </a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="mb-0 paw-icon">{{ program.name }}</h3>
+        <span class="badge status-badge
+            {% if program.status_label == 'Active' %}bg-success
+            {% elif program.status_label == 'Scheduled' %}bg-info
+            {% elif program.status_label == 'Completed' %}bg-secondary
+            {% else %}bg-warning{% endif %}">
+            {{ program.status_label }}
+        </span>
+    </div>
+    <div class="card-body">
+        {% if program.description %}
+        <p class="lead">{{ program.description }}</p>
+        {% endif %}
+
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <strong><i class="bi bi-calendar-event"></i> Start Date:</strong>
+                {{ program.start_date.strftime('%B %d, %Y') }}
+            </div>
+            <div class="col-md-4">
+                <strong><i class="bi bi-calendar-check"></i> End Date:</strong>
+                {% if program.is_ongoing %}
+                    <span class="text-muted">Ongoing</span>
+                {% elif program.end_date %}
+                    {{ program.end_date.strftime('%B %d, %Y') }}
+                {% else %}
+                    <span class="text-muted">Not set</span>
+                {% endif %}
+            </div>
+            <div class="col-md-4">
+                <strong><i class="bi bi-clock-history"></i> Duration:</strong>
+                {% if program.duration_weeks %}
+                    {{ program.duration_weeks }} weeks
+                {% else %}
+                    <span class="text-muted">Ongoing</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <a href="{{ url_for('main.edit_training_program', program_id=program.id) }}"
+               class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-pencil"></i> Edit
+            </a>
+            <form method="POST" action="{{ url_for('main.toggle_training_program', program_id=program.id) }}"
+                  class="d-inline">
+                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-toggle-{{ 'on' if program.is_active else 'off' }}"></i>
+                    {{ 'Deactivate' if program.is_active else 'Activate' }}
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('main.delete_training_program', program_id=program.id) }}"
+                  onsubmit="return confirm('Delete this program and all its activities?');" class="d-inline">
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-trash"></i> Delete
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Weekly Schedule -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4>Weekly Schedule</h4>
+    <a href="{{ url_for('main.new_weekly_activity', program_id=program.id) }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-circle"></i> Add Activity
+    </a>
+</div>
+
+<div class="week-grid">
+    {% for day_index in range(7) %}
+    <div class="day-column">
+        <div class="day-header">{{ day_names[day_index] }}</div>
+        <div class="day-activities">
+            {% for activity in activities_by_day[day_index] %}
+            <div class="activity-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <strong>{{ activity.name }}</strong>
+                    <div class="dropdown">
+                        <button class="btn btn-link btn-sm p-0" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('main.edit_weekly_activity', program_id=program.id, activity_id=activity.id) }}">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </a>
+                            </li>
+                            <li>
+                                <form method="POST" action="{{ url_for('main.delete_weekly_activity', program_id=program.id, activity_id=activity.id) }}"
+                                      onsubmit="return confirm('Delete this activity?');">
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                {% if activity.time_formatted %}
+                <div class="activity-time">
+                    <i class="bi bi-clock"></i> {{ activity.time_formatted }}
+                    {% if activity.duration_formatted %}
+                    ({{ activity.duration_formatted }})
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if activity.description %}
+                <small class="text-muted d-block mt-1">{{ activity.description[:50] }}{% if activity.description|length > 50 %}...{% endif %}</small>
+                {% endif %}
+
+                {% if activity.resources %}
+                <div class="mt-2">
+                    {% for resource in activity.resources %}
+                    <a href="{{ url_for('main.view_training_resource', resource_id=resource.id) }}"
+                       class="badge bg-secondary text-decoration-none me-1" title="{{ resource.title }}">
+                        <i class="{{ resource.icon_class }}"></i>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="text-center text-muted py-3">
+                <small>No activities</small>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
